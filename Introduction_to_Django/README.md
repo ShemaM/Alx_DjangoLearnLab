@@ -39,12 +39,17 @@ Welcome to the **LibraryProject**. This project is designed to provide hands-on 
 Understanding the roles of the core components:
 
 * **`manage.py`**: A command-line utility that lets you interact with this Django project (e.g., running the server or syncing the database).
-
 * **`LibraryProject/settings.py`**: The primary configuration file for the project, including database settings and app registrations.
-
 * **`LibraryProject/urls.py`**: The "table of contents" for the site; it handles URL declarations and routing.
-
 * **`LibraryProject/wsgi.py` / `asgi.py`**: Entry points for web servers to serve the project.
 
 ---
-*This project provides a solid foundation in Django, preparing for the development of complex, data-driven web applications.* 
+
+## 🚀 Future Milestones
+
+-**Task 1: Models & ORM** - Define Book models and explore the Django shell.
+-**Task 2: Django Admin** - Register models and customize the administrative dashboard.
+-**Task 3: Views & Templates** - Create user-facing pages for the Library.
+
+---
+*This project provides a solid foundation in Django, preparing for the development of complex, data-driven web applications.*
