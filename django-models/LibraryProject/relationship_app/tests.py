@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 from django.urls import reverse
 
@@ -77,3 +77,61 @@ class RoleAccessControlTests(TestCase):
         member_response = self.client.get(reverse('relationship_app:member_view'))
         self.assertEqual(member_response.status_code, 200)
         self.assertContains(member_response, 'Member Area')
+
+
+class BookPermissionTests(TestCase):
+    def setUp(self):
+        self.author = Author.objects.create(name='Author Two')
+        self.book = Book.objects.create(title='Protected Book', author=self.author)
+        self.user = User.objects.create_user(username='user1', password='pass123')
+
+    def test_custom_permissions_defined_on_book(self):
+        permissions = dict(Book._meta.permissions)
+        self.assertIn('can_add_book', permissions)
+        self.assertIn('can_change_book', permissions)
+        self.assertIn('can_delete_book', permissions)
+
+    def test_add_book_requires_permission(self):
+        self.client.login(username='user1', password='pass123')
+        response = self.client.get(reverse('relationship_app:add_book'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_add_book_allowed_with_permission(self):
+        perm = Permission.objects.get(codename='can_add_book')
+        self.user.user_permissions.add(perm)
+        self.client.login(username='user1', password='pass123')
+
+        get_response = self.client.get(reverse('relationship_app:add_book'))
+        self.assertEqual(get_response.status_code, 200)
+
+        post_response = self.client.post(
+            reverse('relationship_app:add_book'),
+            {'title': 'New Book', 'author_id': self.author.id},
+        )
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(Book.objects.filter(title='New Book').exists())
+
+    def test_edit_and_delete_require_permissions(self):
+        self.client.login(username='user1', password='pass123')
+        edit_response = self.client.get(reverse('relationship_app:edit_book', args=[self.book.pk]))
+        delete_response = self.client.get(reverse('relationship_app:delete_book', args=[self.book.pk]))
+        self.assertEqual(edit_response.status_code, 403)
+        self.assertEqual(delete_response.status_code, 403)
+
+    def test_edit_and_delete_allowed_with_permissions(self):
+        change_perm = Permission.objects.get(codename='can_change_book')
+        delete_perm = Permission.objects.get(codename='can_delete_book')
+        self.user.user_permissions.add(change_perm, delete_perm)
+        self.client.login(username='user1', password='pass123')
+
+        edit_response = self.client.post(
+            reverse('relationship_app:edit_book', args=[self.book.pk]),
+            {'title': 'Updated Title', 'author_id': self.author.id},
+        )
+        self.assertEqual(edit_response.status_code, 302)
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.title, 'Updated Title')
+
+        delete_response = self.client.post(reverse('relationship_app:delete_book', args=[self.book.pk]))
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(Book.objects.filter(pk=self.book.pk).exists())

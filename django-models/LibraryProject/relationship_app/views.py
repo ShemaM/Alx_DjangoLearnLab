@@ -1,10 +1,11 @@
 from django.contrib.auth import login as auth_login
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import permission_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import redirect, render
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import DetailView
 
-from .models import Book, Library, UserProfile
+from .models import Author, Book, Library, UserProfile
 
 
 def list_books(request):
@@ -48,3 +49,63 @@ def librarian_view(request):
 @user_passes_test(role_check(UserProfile.MEMBER), login_url='relationship_app:login')
 def member_view(request):
     return render(request, 'relationship_app/member_view.html')
+
+
+@permission_required('relationship_app.can_add_book', raise_exception=True)
+def add_book(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        author_id = request.POST.get('author_id')
+
+        cleaned_title = title.strip() if title else ''
+        if not (cleaned_title and author_id):
+            return HttpResponse('Missing required fields: title and author_id', status=400)
+
+        author = get_object_or_404(Author, pk=author_id)
+        Book.objects.create(title=cleaned_title, author=author)
+        return redirect('relationship_app:list_books')
+
+    return HttpResponse('Add Book', status=200)
+
+
+@permission_required('relationship_app.can_change_book', raise_exception=True)
+def edit_book(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        author_id = request.POST.get('author_id')
+
+        updated = False
+        if title:
+            cleaned_title = title.strip()
+            if cleaned_title and cleaned_title != book.title:
+                book.title = cleaned_title
+                updated = True
+        if author_id:
+            try:
+                author_pk = int(author_id)
+            except (TypeError, ValueError):
+                return HttpResponse('Invalid author ID format', status=400)
+            if book.author_id != author_pk:
+                book.author = get_object_or_404(Author, pk=author_pk)
+                updated = True
+
+        if not updated:
+            return redirect('relationship_app:list_books')
+
+        book.save()
+        return redirect('relationship_app:list_books')
+
+    return HttpResponse(f'Edit Book {book.pk}', status=200)
+
+
+@permission_required('relationship_app.can_delete_book', raise_exception=True)
+def delete_book(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+
+    if request.method == 'POST':
+        book.delete()
+        return redirect('relationship_app:list_books')
+
+    return HttpResponse(f'Delete Book {book.pk}', status=200)
