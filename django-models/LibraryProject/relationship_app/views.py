@@ -2,7 +2,7 @@ from django.db.models import Prefetch
 from django.shortcuts import render
 from django.views.generic import DetailView
 
-from .models import Book, Library
+from .models import Book
 
 
 def list_books(request):
@@ -11,6 +11,6 @@ def list_books(request):
 
 
 class LibraryDetailView(DetailView):
-    model = Library
+    model = 'relationship_app.Library'
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
