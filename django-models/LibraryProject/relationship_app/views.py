@@ -14,17 +14,3 @@ class LibraryDetailView(DetailView):
     model = Library
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
-
-    def get_queryset(self):
-        return Library.objects.prefetch_related(
-            Prefetch('books', queryset=Book.objects.select_related('author'), to_attr='prefetched_books')
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['books'] = getattr(
-            self.object,
-            'prefetched_books',
-            self.object.books.select_related('author').all(),
-        )
-        return context
