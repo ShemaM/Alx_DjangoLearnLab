@@ -32,7 +32,7 @@ def register(request):
 
 
 def role_check(role):
-    return lambda u: hasattr(u, 'userprofile') and u.userprofile.role == role
+    return lambda u: u.is_authenticated and hasattr(u, 'userprofile') and u.userprofile.role == role
 
 
 @user_passes_test(role_check(UserProfile.ADMIN), login_url='relationship_app:login')
