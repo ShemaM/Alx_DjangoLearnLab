@@ -47,8 +47,8 @@ def run_queries():
     # 1. Query all books by a specific author
     author_name = 'J.K. Rowling'
     print(f"1. Books by {author_name}:")
-    retrieved_author = Author.objects.get(name=author_name)
-    books_by_author = Book.objects.filter(author=retrieved_author)
+    author = Author.objects.get(name=author_name) # Changed variable name
+    books_by_author = Book.objects.filter(author=author)
     for book in books_by_author:
         print(f"- {book.title}")
     print("-" * 20)
