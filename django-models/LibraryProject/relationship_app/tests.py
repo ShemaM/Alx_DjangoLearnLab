@@ -19,6 +19,13 @@ class RelationshipAppViewsTests(TestCase):
         self.assertContains(response, self.book.title)
         self.assertContains(response, self.author.name)
 
+    def test_list_books_view_selects_authors(self):
+        url = reverse('relationship_app:list_books')
+        response = self.client.get(url)
+
+        books = response.context['books']
+        self.assertIn('author', books.query.select_related)
+
     def test_library_detail_view_displays_library_and_books(self):
         url = reverse('relationship_app:library_detail', args=[self.library.pk])
         response = self.client.get(url)
