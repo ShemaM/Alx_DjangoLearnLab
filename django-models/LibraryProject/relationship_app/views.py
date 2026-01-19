@@ -57,11 +57,12 @@ def add_book(request):
         title = request.POST.get('title')
         author_id = request.POST.get('author_id')
 
-        if not (title and title.strip() and author_id):
-            return HttpResponse('Missing book data', status=400)
+        cleaned_title = title.strip() if title else ''
+        if not (cleaned_title and author_id):
+            return HttpResponse('Missing required fields: title and author_id', status=400)
 
         author = get_object_or_404(Author, pk=author_id)
-        Book.objects.create(title=title, author=author)
+        Book.objects.create(title=cleaned_title, author=author)
         return redirect('relationship_app:list_books')
 
     return HttpResponse('Add Book', status=200)
@@ -76,14 +77,16 @@ def edit_book(request, pk):
         author_id = request.POST.get('author_id')
 
         updated = False
-        if title and title != book.title:
-            book.title = title
-            updated = True
+        if title:
+            cleaned_title = title.strip()
+            if cleaned_title and cleaned_title != book.title:
+                book.title = cleaned_title
+                updated = True
         if author_id:
             try:
                 author_pk = int(author_id)
             except (TypeError, ValueError):
-                return HttpResponse('Invalid author', status=400)
+                return HttpResponse('Invalid author ID format', status=400)
             if book.author_id != author_pk:
                 book.author = get_object_or_404(Author, pk=author_pk)
                 updated = True
