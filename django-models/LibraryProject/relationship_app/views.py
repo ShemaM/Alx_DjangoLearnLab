@@ -24,7 +24,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             auth_login(request, user)
-            return redirect('login')
+            return redirect('relationship_app:list_books')
     else:
         form = UserCreationForm()
 
