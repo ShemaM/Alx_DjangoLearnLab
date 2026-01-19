@@ -12,6 +12,11 @@ django.setup()
 from relationship_app.models import Author, Book, Library, Librarian
 
 def run_queries():
+    # Clear existing data to ensure a clean slate for sample data creation
+    Librarian.objects.all().delete()
+    Library.objects.all().delete()
+    Book.objects.all().delete()
+    Author.objects.all().delete()
     # --- Create Sample Data ---
 
     # Create Authors
@@ -47,8 +52,10 @@ def run_queries():
     print("-" * 20)
 
     # 2. List all books in a library
-    print(f"2. Books in {library1.name}:")
-    books_in_library = library1.books.all()
+    library_name = 'Downtown Library'
+    print(f"2. Books in {library_name}:")
+    retrieved_library = Library.objects.get(name=library_name)
+    books_in_library = retrieved_library.books.all()
     for book in books_in_library:
         print(f"- {book.title}")
     print("-" * 20)
