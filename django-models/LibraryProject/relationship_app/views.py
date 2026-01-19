@@ -75,10 +75,16 @@ def edit_book(request, pk):
         title = request.POST.get('title')
         author_id = request.POST.get('author_id')
 
+        updated = False
         if title:
             book.title = title
+            updated = True
         if author_id:
             book.author = get_object_or_404(Author, pk=author_id)
+            updated = True
+
+        if not updated:
+            return HttpResponse('No updates provided', status=400)
 
         book.save()
         return redirect('relationship_app:list_books')
