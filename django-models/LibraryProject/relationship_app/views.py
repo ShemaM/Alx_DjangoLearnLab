@@ -1,5 +1,7 @@
 from django.db.models import Prefetch
-from django.shortcuts import render
+from django.contrib.auth import login as auth_login
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import redirect, render
 from django.views.generic import DetailView
 
 from .models import Book, Library
@@ -14,3 +16,16 @@ class LibraryDetailView(DetailView):
     model = Library
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
+
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            auth_login(request, user)
+            return redirect('relationship_app:list_books')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'relationship_app/register.html', {'form': form})
