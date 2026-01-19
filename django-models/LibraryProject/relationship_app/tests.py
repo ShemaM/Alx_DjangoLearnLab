@@ -1,7 +1,8 @@
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Author, Book, Library
+from .models import Author, Book, Library, UserProfile
 
 
 class RelationshipAppViewsTests(TestCase):
@@ -33,3 +34,46 @@ class RelationshipAppViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.library.name)
         self.assertContains(response, self.book.title)
+
+
+class RoleAccessControlTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username='admin', password='pass123')
+        self.admin_user.userprofile.role = UserProfile.ADMIN
+        self.admin_user.userprofile.save()
+
+        self.librarian_user = User.objects.create_user(username='librarian', password='pass123')
+        self.librarian_user.userprofile.role = UserProfile.LIBRARIAN
+        self.librarian_user.userprofile.save()
+
+        self.member_user = User.objects.create_user(username='member', password='pass123')
+        # Member role is default
+
+    def test_user_profile_created_on_user_creation(self):
+        new_user = User.objects.create_user(username='newuser', password='pass123')
+        self.assertTrue(hasattr(new_user, 'userprofile'))
+        self.assertEqual(new_user.userprofile.role, UserProfile.MEMBER)
+
+    def test_admin_view_requires_admin_role(self):
+        self.client.login(username='admin', password='pass123')
+        response = self.client.get(reverse('relationship_app:admin_view'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Admin Dashboard')
+
+    def test_admin_view_redirects_non_admin(self):
+        self.client.login(username='member', password='pass123')
+        response = self.client.get(reverse('relationship_app:admin_view'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('relationship_app:login'), response.url)
+
+    def test_librarian_and_member_views_respect_roles(self):
+        self.client.login(username='librarian', password='pass123')
+        librarian_response = self.client.get(reverse('relationship_app:librarian_view'))
+        self.assertEqual(librarian_response.status_code, 200)
+        self.assertContains(librarian_response, 'Librarian Area')
+
+        self.client.logout()
+        self.client.login(username='member', password='pass123')
+        member_response = self.client.get(reverse('relationship_app:member_view'))
+        self.assertEqual(member_response.status_code, 200)
+        self.assertContains(member_response, 'Member Area')
