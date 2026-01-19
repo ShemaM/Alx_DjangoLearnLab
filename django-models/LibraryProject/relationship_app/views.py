@@ -76,10 +76,10 @@ def edit_book(request, pk):
         author_id = request.POST.get('author_id')
 
         updated = False
-        if title:
+        if title and title != book.title:
             book.title = title
             updated = True
-        if author_id:
+        if author_id and str(book.author_id) != str(author_id):
             book.author = get_object_or_404(Author, pk=author_id)
             updated = True
 
