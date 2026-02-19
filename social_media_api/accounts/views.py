@@ -15,9 +15,11 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        token, _ = Token.objects.get_or_create(user=user)
+        token_key = getattr(user, '_token_key', None)
+        if not token_key:
+            token_key = Token.objects.get_or_create(user=user)[0].key
         return Response(
-            {'token': token.key, 'user': UserSerializer(user).data},
+            {'token': token_key, 'user': UserSerializer(user).data},
             status=status.HTTP_201_CREATED,
         )
 
@@ -44,4 +46,3 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
-
