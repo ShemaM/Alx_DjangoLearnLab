@@ -12,7 +12,7 @@
 The `accounts.User` model extends `AbstractUser` and adds:
 
 - `bio` (text)
-- `profile_picture` (URL)
+- `profile_picture` (image upload)
 - `followers` (many-to-many to self, `symmetrical=False`)
 
 ### Authentication (Token)
@@ -29,4 +29,3 @@ This API uses DRF TokenAuthentication (`rest_framework.authtoken`).
 Send the token in:
 
 - `Authorization: Token <token>`
-
