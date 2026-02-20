@@ -13,7 +13,7 @@ The `accounts.User` model extends `AbstractUser` and adds:
 
 - `bio` (text)
 - `profile_picture` (image upload)
-- `followers` (many-to-many to self, `symmetrical=False`)
+- `following` (many-to-many to self, `symmetrical=False`)
 
 ### Authentication (Token)
 
@@ -25,6 +25,12 @@ This API uses DRF TokenAuthentication (`rest_framework.authtoken`).
 - `POST /api/login` (or `/api/login/`) -> returns `{"token": "...", "user": {...}}`
 - `GET /api/profile` (or `/api/profile/`) -> current user profile (requires auth)
 - `PATCH /api/profile` (or `/api/profile/`) -> update current user (requires auth)
+- `POST /api/follow/<user_id>/` -> follow a user (requires auth)
+- `POST /api/unfollow/<user_id>/` -> unfollow a user (requires auth)
+
+### Feed
+
+- `GET /api/feed/` -> posts from users you follow (most recent first; requires auth)
 
 ### Posts
 

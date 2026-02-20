@@ -1,10 +1,22 @@
-from rest_framework import viewsets
+from rest_framework import generics, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 from .models import Comment, Post
 from .permissions import IsAuthorOrReadOnly
 from .serializers import CommentSerializer, PostSerializer
+
+
+class FeedView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (OrderingFilter,)
+    ordering_fields = ("created_at", "updated_at")
+    ordering = ("-created_at",)
+
+    def get_queryset(self):
+        following_ids = self.request.user.following.values_list("id", flat=True)
+        return Post.objects.select_related("author").filter(author_id__in=following_ids)
 
 
 class PostViewSet(viewsets.ModelViewSet):
