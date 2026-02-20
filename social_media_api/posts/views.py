@@ -8,7 +8,7 @@ from .serializers import CommentSerializer, PostSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.select_related('author').all()
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
     filter_backends = (SearchFilter, OrderingFilter)
@@ -16,11 +16,15 @@ class PostViewSet(viewsets.ModelViewSet):
     ordering_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
 
+    def get_queryset(self):
+        return Post.objects.select_related('author').all()
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
     filter_backends = (OrderingFilter,)
