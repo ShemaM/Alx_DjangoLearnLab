@@ -20,7 +20,7 @@ class PostsCommentsAPITests(APITestCase):
     def test_post_crud_and_permissions(self):
         self.auth_as(self.token1)
         create_resp = self.client.post(
-            '/posts/',
+            '/api/posts/',
             {'title': 'Hello', 'content': 'World'},
             format='json',
         )
@@ -28,11 +28,11 @@ class PostsCommentsAPITests(APITestCase):
         post_id = create_resp.data['id']
 
         self.auth_as(self.token2)
-        patch_resp = self.client.patch(f'/posts/{post_id}/', {'title': 'Nope'}, format='json')
+        patch_resp = self.client.patch(f'/api/posts/{post_id}/', {'title': 'Nope'}, format='json')
         self.assertEqual(patch_resp.status_code, 403)
 
         self.auth_as(self.token1)
-        list_resp = self.client.get('/posts/')
+        list_resp = self.client.get('/api/posts/')
         self.assertEqual(list_resp.status_code, 200)
         self.assertIn('results', list_resp.data)
 
@@ -41,7 +41,7 @@ class PostsCommentsAPITests(APITestCase):
         Post.objects.create(author=self.user1, title='Cooking', content='Recipes')
 
         self.auth_as(self.token1)
-        resp = self.client.get('/posts/?search=django')
+        resp = self.client.get('/api/posts/?search=django')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data['count'], 1)
 
@@ -50,7 +50,7 @@ class PostsCommentsAPITests(APITestCase):
         self.auth_as(self.token1)
 
         create_resp = self.client.post(
-            '/comments/',
+            '/api/comments/',
             {'post': post.id, 'content': 'Nice post'},
             format='json',
         )
@@ -58,12 +58,11 @@ class PostsCommentsAPITests(APITestCase):
         comment_id = create_resp.data['id']
 
         self.auth_as(self.token2)
-        delete_resp = self.client.delete(f'/comments/{comment_id}/')
+        delete_resp = self.client.delete(f'/api/comments/{comment_id}/')
         self.assertEqual(delete_resp.status_code, 403)
 
         self.auth_as(self.token1)
-        list_resp = self.client.get(f'/comments/?post={post.id}')
+        list_resp = self.client.get(f'/api/comments/?post={post.id}')
         self.assertEqual(list_resp.status_code, 200)
         self.assertIn('results', list_resp.data)
         self.assertEqual(list_resp.data['count'], 1)
-
