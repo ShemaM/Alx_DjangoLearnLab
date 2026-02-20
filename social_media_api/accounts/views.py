@@ -3,11 +3,14 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import permissions
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import RegisterSerializer, UserSerializer
+
+CustomUser = get_user_model()
 
 
 class RegisterView(APIView):
@@ -44,17 +47,18 @@ class LoginView(APIView):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
 
-class FollowUserView(APIView):
-    permission_classes = [IsAuthenticated]
+class FollowUserView(generics.GenericAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, user_id: int):
-        target_user = get_object_or_404(get_user_model(), pk=user_id)
+        target_user = get_object_or_404(CustomUser, pk=user_id)
         if target_user.pk == request.user.pk:
             return Response(
                 {"detail": "You cannot follow yourself."},
@@ -72,11 +76,12 @@ class FollowUserView(APIView):
         )
 
 
-class UnfollowUserView(APIView):
-    permission_classes = [IsAuthenticated]
+class UnfollowUserView(generics.GenericAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, user_id: int):
-        target_user = get_object_or_404(get_user_model(), pk=user_id)
+        target_user = get_object_or_404(CustomUser, pk=user_id)
         if target_user.pk == request.user.pk:
             return Response(
                 {"detail": "You cannot unfollow yourself."},
