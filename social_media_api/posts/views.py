@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -45,8 +45,8 @@ class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk: int):
-        post = get_object_or_404(Post, pk=pk)
-        like, created = Like.objects.get_or_create(post=post, user=request.user)
+        post = generics.get_object_or_404(Post, pk=pk)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
         if not created:
             return Response(
                 {"detail": "You have already liked this post."},
@@ -54,11 +54,12 @@ class LikePostView(APIView):
             )
 
         if post.author_id != request.user.id:
-            Notification.create(
+            Notification.objects.create(
                 recipient=post.author,
                 actor=request.user,
                 verb="liked your post",
-                target=post,
+                target_content_type=ContentType.objects.get_for_model(post),
+                target_object_id=post.pk,
             )
 
         return Response(
@@ -71,7 +72,7 @@ class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk: int):
-        post = get_object_or_404(Post, pk=pk)
+        post = generics.get_object_or_404(Post, pk=pk)
         deleted, _ = Like.objects.filter(post=post, user=request.user).delete()
         if not deleted:
             return Response(
