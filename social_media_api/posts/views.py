@@ -1,8 +1,13 @@
-from rest_framework import generics, permissions, viewsets
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Comment, Post
+from notifications.models import Notification
+
+from .models import Comment, Like, Post
 from .permissions import IsAuthorOrReadOnly
 from .serializers import CommentSerializer, PostSerializer
 
@@ -36,6 +41,49 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
+class LikePostView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk: int):
+        post = get_object_or_404(Post, pk=pk)
+        like, created = Like.objects.get_or_create(post=post, user=request.user)
+        if not created:
+            return Response(
+                {"detail": "You have already liked this post."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if post.author_id != request.user.id:
+            Notification.create(
+                recipient=post.author,
+                actor=request.user,
+                verb="liked your post",
+                target=post,
+            )
+
+        return Response(
+            {"detail": "Post liked.", "likes_count": post.likes.count()},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class UnlikePostView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk: int):
+        post = get_object_or_404(Post, pk=pk)
+        deleted, _ = Like.objects.filter(post=post, user=request.user).delete()
+        if not deleted:
+            return Response(
+                {"detail": "You have not liked this post."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"detail": "Post unliked.", "likes_count": post.likes.count()},
+            status=status.HTTP_200_OK,
+        )
+
+
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -52,4 +100,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        comment = serializer.save(author=self.request.user)
+        if comment.post.author_id != self.request.user.id:
+            Notification.create(
+                recipient=comment.post.author,
+                actor=self.request.user,
+                verb="commented on your post",
+                target=comment.post,
+            )

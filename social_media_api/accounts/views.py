@@ -8,6 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from notifications.models import Notification
+
 from .serializers import RegisterSerializer, UserSerializer
 
 CustomUser = get_user_model()
@@ -66,6 +68,13 @@ class FollowUserView(generics.GenericAPIView):
             )
 
         request.user.following.add(target_user)
+        if target_user.pk != request.user.pk:
+            Notification.create(
+                recipient=target_user,
+                actor=request.user,
+                verb="followed you",
+                target=request.user,
+            )
         return Response(
             {
                 "detail": f"Now following {target_user.username}.",

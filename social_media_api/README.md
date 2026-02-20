@@ -32,6 +32,15 @@ This API uses DRF TokenAuthentication (`rest_framework.authtoken`).
 
 - `GET /api/feed/` -> posts from users you follow (most recent first; requires auth)
 
+### Likes
+
+- `POST /api/posts/<id>/like/` -> like a post (requires auth; one like per user per post)
+- `POST /api/posts/<id>/unlike/` -> unlike a post (requires auth)
+
+### Notifications
+
+- `GET /api/notifications/` -> list your notifications (unread first; requires auth)
+
 ### Posts
 
 CRUD (read-only without auth; write requires auth):
